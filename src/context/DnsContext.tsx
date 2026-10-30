@@ -17,7 +17,6 @@ import {
   initialRecords,
   initialRegistrars,
   initialNotificationSettings,
-  initialAuditLogs,
   initialTeamMembers,
   initialBackups,
   initialGlobalNodes,
@@ -133,10 +132,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : initialNotificationSettings;
   });
 
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}audit`);
-    return saved ? JSON.parse(saved) : initialAuditLogs;
-  });
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}team`);
@@ -253,10 +249,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [notificationSettings]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}audit`, JSON.stringify(auditLogs));
-  }, [auditLogs]);
-
-  useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}team`, JSON.stringify(teamMembers));
   }, [teamMembers]);
 
@@ -317,25 +309,27 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     diff?: AuditLogEntry['diff'],
     rollbackable: boolean = true
   ) => {
-    const entry: AuditLogEntry = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      timestamp: new Date().toISOString(),
-      actor: {
-        name: currentUser.name,
-        email: currentUser.email,
-        role: currentUser.role,
-        avatar: currentUser.avatar
-      },
-      ipAddress: '113.161.44.18 (Viettel HCM)',
-      action,
-      domainName,
-      recordName,
-      recordType,
-      details,
-      diff,
-      rollbackable
+    const allowedActions = ['ROLLBACK', 'REGISTRAR_SYNC', 'SSL_RENEWED', '2FA_ENABLED', 'ROLE_CHANGED', 'DDNS_AUTO_UPDATE'];
+    if (!allowedActions.includes(action)) return;
+    const payload = {
+      action, domainName, details, recordName,
+      recordType: typeof recordType === 'string' ? recordType : undefined,
+      before: diff?.before, after: diff?.after, rollbackable,
     };
-    setAuditLogs(prev => [entry, ...prev]);
+    void fetch('/api/audit-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(async response => {
+      if (!response.ok) throw new Error('Audit log persistence failed');
+      const result = await fetch('/api/audit-logs?limit=100', { cache: 'no-store' });
+      if (!result.ok) throw new Error('Audit log refresh failed');
+      const data = await result.json();
+      setAuditLogs(Array.isArray(data.logs) ? data.logs : []);
+    }).catch(() => {
+      setSyncStatus('offline');
+      dispatchAlert('Không thể lưu Audit Log', 'Máy chủ chưa xác nhận bản ghi kiểm toán; vui lòng thử lại.', 'error');
+    });
   };
 
   // Helper to dispatch alert notification
@@ -389,16 +383,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Update domain record count
     setDomains(prev => prev.map(d => d.id === recordData.domainId ? { ...d, recordCount: d.recordCount + 1 } : d));
 
-    logAudit(
-      'CREATE_RECORD',
-      recordData.domainName,
-      `Tạo mới bản ghi ${recordData.name} (${recordData.type}) trỏ tới ${recordData.content}`,
-      recordData.name,
-      recordData.type,
-      { after: newRecord },
-      true
-    );
-
     dispatchAlert(
       `Bản ghi ${recordData.type} mới đã tạo`,
       `${recordData.name}.${recordData.domainName} -> ${recordData.content}`,
@@ -431,16 +415,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dispatchAlert('Không thể cập nhật DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi cũ đã được khôi phục.', 'error', existing.domainName);
       });
 
-    logAudit(
-      'UPDATE_RECORD',
-      existing.domainName,
-      `Cập nhật bản ghi ${existing.name} (${existing.type}): ${updates.content ? `Giá trị mới: ${updates.content}` : 'Thay đổi cấu hình'}`,
-      existing.name,
-      existing.type,
-      { before: existing, after: updatedRecord },
-      true
-    );
-
     dispatchAlert(
       `Bản ghi DNS được cập nhật`,
       `${existing.name}.${existing.domainName} (${existing.type}) đã được điều chỉnh`,
@@ -463,16 +437,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dispatchAlert('Không thể xóa DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi đã được khôi phục.', 'error', existing.domainName);
       });
     setDomains(prev => prev.map(d => d.id === existing.domainId ? { ...d, recordCount: Math.max(0, d.recordCount - 1) } : d));
-
-    logAudit(
-      'DELETE_RECORD',
-      existing.domainName,
-      `Xóa bản ghi ${existing.name} (${existing.type}) từng trỏ tới ${existing.content}`,
-      existing.name,
-      existing.type,
-      { before: existing },
-      true
-    );
 
     dispatchAlert(
       `Bản ghi DNS đã bị xóa`,
@@ -593,6 +557,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt, recordCount: savedRecords.length } : item));
       setRecords(prev => [...prev.filter(item => item.domainId !== newDomain.id), ...savedRecords]);
       setSelectedDomainId(current => current === newDomain.id ? persisted.id : current);
+      dispatchAlert('Tên miền mới đã thêm', `${newDomain.name} đã được PostgreSQL xác nhận cùng ${savedRecords.length} bản ghi DNS khởi tạo`, 'success', newDomain.name);
     }).catch(async () => {
       if (persistedDomainId) {
         // Compensate a partially completed seed operation to avoid orphaned domains.
@@ -645,9 +610,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRecords(prev => [...prev, defaultApexA, defaultCname]);
     setSelectedDomainId(newDomain.id);
 
-    logAudit('DOMAIN_ADDED', newDomain.name, `Đăng ký & ủy quyền quản lý tên miền mới qua ${newDomain.registrar}`, undefined, undefined, undefined, false);
-    dispatchAlert('Tên miền mới đã thêm', `${newDomain.name} đã được thiết lập vùng DNS`, 'success', newDomain.name);
-
     return newDomain;
   };
 
@@ -679,22 +641,20 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Confirm deletion in PostgreSQL before removing the domain from the UI.
     void fetch(`/api/domains/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      .then(response => { if (!response.ok) throw new Error('Domain delete failed'); })
-      .then(() => {
+      .then(response => {
+        if (!response.ok) throw new Error('Domain delete failed');
         setDomains(prev => prev.filter(d => d.id !== id));
         setRecords(prev => prev.filter(r => r.domainId !== id));
         if (selectedDomainId === id) {
           const remaining = domains.filter(d => d.id !== id);
           setSelectedDomainId(remaining[0]?.id || '');
         }
+        dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã được PostgreSQL xác nhận xóa`, 'success', domain.name);
       })
       .catch(() => {
         setSyncStatus('offline');
         dispatchAlert('Không thể xóa domain', 'PostgreSQL chưa xác nhận thao tác; domain vẫn được giữ lại.', 'error', domain.name);
       });
-
-    logAudit('DOMAIN_DELETED', domain.name, `Xóa toàn bộ vùng tên miền ${domain.name} và tất cả bản ghi liên quan`, undefined, undefined, undefined, false);
-    dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã ngừng quản lý DNS`, 'warning', domain.name);
   };
 
   // Registrars
