@@ -25,7 +25,7 @@ type AuditLogWithRelations = Prisma.AuditLogGetPayload<{ include: { user: { sele
 function toAuditEntry(log: AuditLogWithRelations) {
   const before = log.before && typeof log.before === 'object' ? log.before : undefined;
   const after = log.after && typeof log.after === 'object' ? log.after : undefined;
-  const record = after || before;
+  const record = (after && !Array.isArray(after) ? after : undefined) ?? (before && !Array.isArray(before) ? before : undefined);
   return {
     id: log.id,
     timestamp: log.createdAt.toISOString(),
