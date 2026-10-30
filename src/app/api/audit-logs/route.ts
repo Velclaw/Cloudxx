@@ -19,7 +19,7 @@ const actionLabels: Record<string, string> = {
   DNS_RECORD_DELETED: 'DELETE_RECORD',
 };
 
-function toAuditEntry(log: any) {
+type AuditLogWithRelations = Prisma.AuditLogGetPayload<{\n  include: { user: { select: { name: true; email: true; image: true } }; domain: { select: { name: true } } };\n}>;\n\nfunction toAuditEntry(log: AuditLogWithRelations) {
   const before = log.before && typeof log.before === 'object' ? log.before : undefined;
   const after = log.after && typeof log.after === 'object' ? log.after : undefined;
   const record = after || before;
@@ -77,6 +77,9 @@ export async function POST(request: Request) {
   const domain = domainName && domainName !== 'Global'
     ? await prisma.domain.findFirst({ where: { userId, name: domainName }, select: { id: true } })
     : null;
+  if (domainName && domainName !== 'Global' && !domain) {
+    return NextResponse.json({ error: 'Domain không tồn tại hoặc không thuộc tài khoản.' }, { status: 404 });
+  }
 
   const safeJson = (value: unknown): Prisma.InputJsonValue | undefined => {
     if (value === undefined) return undefined;
@@ -95,7 +98,12 @@ export async function POST(request: Request) {
       details: body.details.trim(),
       ipAddress: getRequestIp(request),
       before: safeJson(body.before),
-      after: safeJson(body.after),
+      after: safeJson(body.after ?? (
+        typeof body.recordName === 'string' || typeof body.recordType === 'string'
+          ? { name: typeof body.recordName === 'string' ? body.recordName.slice(0, 253) : undefined,
+              type: typeof body.recordType === 'string' ? body.recordType.slice(0, 10) : undefined }
+          : undefined
+      )),
     },
   });
   return NextResponse.json({ ok: true, id: log.id }, { status: 201 });
