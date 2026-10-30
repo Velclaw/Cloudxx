@@ -11,8 +11,8 @@ export async function requireDnsUser(): Promise<string | null> {
 }
 
 export function getRequestIp(request: Request) {
-  const forwarded = request.headers.get('x-forwarded-for');
-  return forwarded?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || null;
+  // Prefer the platform-provided single client IP header; forwarded chains may contain client-supplied values.
+  return request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || null;
 }
 
 export function auditPayload(value: unknown) {

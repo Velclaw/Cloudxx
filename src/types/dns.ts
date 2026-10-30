@@ -143,7 +143,7 @@ export interface AuditLogEntry {
     avatar: string;
   };
   ipAddress: string;
-  action: 'CREATE_RECORD' | 'UPDATE_RECORD' | 'DELETE_RECORD' | 'ROLLBACK' | 'REGISTRAR_SYNC' | 'DDNS_AUTO_UPDATE' | 'SSL_RENEWED' | '2FA_ENABLED' | 'ROLE_CHANGED' | 'DOMAIN_ADDED' | 'DOMAIN_DELETED';
+  action: 'CREATE_RECORD' | 'UPDATE_RECORD' | 'DELETE_RECORD' | 'ROLLBACK' | 'REGISTRAR_SYNC' | 'DDNS_AUTO_UPDATE' | 'SSL_RENEWED' | '2FA_ENABLED' | 'ROLE_CHANGED' | 'MEMBER_INVITED' | 'DOMAIN_ADDED' | 'DOMAIN_DELETED';
   domainName: string;
   recordName?: string;
   recordType?: RecordType;

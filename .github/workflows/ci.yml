@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - hardening/**
+      - fix/**
 
 permissions:
   contents: read
@@ -22,6 +23,22 @@ jobs:
           node-version: "22.12"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Dependency vulnerability report
+        run: |
+          npm audit --json > "$RUNNER_TEMP/npm-audit-report.json" || true
+          node - "$RUNNER_TEMP/npm-audit-report.json" <<'NODE'
+          const fs = require('node:fs');
+          try {
+            const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+            const counts = report.metadata?.vulnerabilities ?? {};
+            console.log('Dependency audit summary:', JSON.stringify(counts));
+            for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
+              console.log(`PACKAGE=${name} SEVERITY=${item.severity} DIRECT=${item.isDirect} RANGE=${item.range} FIX=${JSON.stringify(item.fixAvailable)}`);
+            }
+          } catch (error) {
+            console.log('npm audit did not return a parseable report:', String(error));
+          }
+          NODE
       - name: Unit tests
         run: npm test
       - name: TypeScript check
