@@ -4,8 +4,8 @@ import { prisma } from '../../../../lib/prisma';
 import { escapeHtml, getAuthBaseUrl } from '../../../../lib/email';
 import { consumeAuthRateLimit } from '../../../../lib/rate-limit';
 
-function redirectToStatus(status: 'success' | 'invalid') {
-  return NextResponse.redirect(new URL(`/?verified=${status}`, getAuthBaseUrl()));
+function redirectToStatus(status: 'success' | 'invalid' | 'rate-limited') {
+  return NextResponse.redirect(new URL(`/?verified=${status}`, getAuthBaseUrl()), 303);
 }
 
 // Email security scanners often prefetch GET links. Only display a confirmation
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     if (!(await consumeAuthRateLimit(request, 'verify-email', 10, 15 * 60 * 1000))) {
-      return NextResponse.json({ error: 'Quá nhiều yêu cầu. Thử lại sau.' }, { status: 429, headers: { 'Retry-After': '900' } });
+      return NextResponse.redirect(new URL('/?verified=rate-limited', getAuthBaseUrl()), 303);
     }
 
     const form = await request.formData();
