@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for the global search Command Palette modal (triggered by ⌘K / Ctrl+K or Navbar button) allowing instant cross-application search across DNS records, domains, and audit logs with direct navigation and item highlighting.",
+  "updatedAt":  "2026-10-30T01:47:57.090688528Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

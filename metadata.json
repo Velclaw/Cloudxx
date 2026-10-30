@@ -1,0 +1,6 @@
+{
+  "name": "DNS Sentinel - Quản Lý DNS & Tên Miền Doanh Nghiệp",
+  "description": "Nền tảng quản lý DNS thời gian thực, tích hợp API Registrar, cảnh báo Telegram & Email, xác thực 2FA, chứng chỉ SSL và phân quyền RBAC bảo mật cao.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
