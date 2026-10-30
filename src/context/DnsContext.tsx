@@ -379,7 +379,12 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!response.ok) throw new Error('DNS record save failed');
       const payload = await response.json();
       if (payload.record?.id) setRecords(prev => prev.map(item => item.id === newRecord.id ? { ...item, id: payload.record.id, lastUpdated: payload.record.updatedAt } : item));
-    }).catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể lưu DNS record', 'API/PostgreSQL chưa sẵn sàng; thay đổi chưa được đồng bộ.', 'error', recordData.domainName); });
+    }).catch(() => {
+      setRecords(prev => prev.filter(item => item.id !== newRecord.id));
+      setDomains(prev => prev.map(d => d.id === recordData.domainId ? { ...d, recordCount: Math.max(0, d.recordCount - 1) } : d));
+      setSyncStatus('offline');
+      dispatchAlert('Không thể lưu DNS record', 'PostgreSQL chưa xác nhận thao tác; thay đổi tạm đã được hoàn tác.', 'error', recordData.domainName);
+    });
 
     // Update domain record count
     setDomains(prev => prev.map(d => d.id === recordData.domainId ? { ...d, recordCount: d.recordCount + 1 } : d));
@@ -420,7 +425,11 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: updates.type, name: updates.name, content: updates.content, ttl: updates.ttl, proxied: updates.proxied, comment: updates.comment }),
     }).then(response => { if (!response.ok) throw new Error('DNS record update failed'); })
-      .catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể cập nhật DNS record', 'Thay đổi chưa được đồng bộ với PostgreSQL.', 'error', existing.domainName); });
+      .catch(() => {
+        setRecords(prev => prev.map(r => r.id === id ? existing : r));
+        setSyncStatus('offline');
+        dispatchAlert('Không thể cập nhật DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi cũ đã được khôi phục.', 'error', existing.domainName);
+      });
 
     logAudit(
       'UPDATE_RECORD',
@@ -447,7 +456,12 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRecords(prev => prev.filter(r => r.id !== id));
     void fetch(`/api/domains/${encodeURIComponent(existing.domainId)}/records/${encodeURIComponent(id)}`, { method: 'DELETE' })
       .then(response => { if (!response.ok) throw new Error('DNS record delete failed'); })
-      .catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể xóa DNS record', 'Yêu cầu xóa chưa được xác nhận bởi PostgreSQL.', 'error', existing.domainName); });
+      .catch(() => {
+        setRecords(prev => prev.some(r => r.id === id) ? prev : [...prev, existing]);
+        setDomains(prev => prev.map(d => d.id === existing.domainId ? { ...d, recordCount: d.recordCount + 1 } : d));
+        setSyncStatus('offline');
+        dispatchAlert('Không thể xóa DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi đã được khôi phục.', 'error', existing.domainName);
+      });
     setDomains(prev => prev.map(d => d.id === existing.domainId ? { ...d, recordCount: Math.max(0, d.recordCount - 1) } : d));
 
     logAudit(
@@ -555,6 +569,40 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       delegationSynced: true
     };
 
+    // Persist the domain first; replace the temporary UI id with the database id.
+    let persistedDomainId: string | undefined;
+    void fetch('/api/domains', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newDomain.name, registrar: newDomain.registrar, autoRenew: newDomain.autoRenew, nameservers: newDomain.nameservers, dnssec: newDomain.dnssec, environment: newDomain.environment }),
+    }).then(async response => {
+      if (!response.ok) throw new Error('Domain create failed');
+      const payload = await response.json();
+      const persisted = payload.domain;
+      if (!persisted?.id) throw new Error('Missing persisted domain id');
+      persistedDomainId = persisted.id;
+      const seeded = [defaultApexA, defaultCname];
+      const savedRecords = await Promise.all(seeded.map(async record => {
+        const recordResponse = await fetch(`/api/domains/${encodeURIComponent(persisted.id)}/records`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: record.type, name: record.name, content: record.content, ttl: record.ttl, proxied: record.proxied, comment: record.comment }),
+        });
+        if (!recordResponse.ok) throw new Error('Initial DNS record create failed');
+        const recordPayload = await recordResponse.json();
+        return { ...record, id: recordPayload.record.id, domainId: persisted.id, lastUpdated: recordPayload.record.updatedAt };
+      }));
+      setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt, recordCount: savedRecords.length } : item));
+      setRecords(prev => [...prev.filter(item => item.domainId !== newDomain.id), ...savedRecords]);
+      setSelectedDomainId(current => current === newDomain.id ? persisted.id : current);
+    }).catch(async () => {
+      if (persistedDomainId) {
+        // Compensate a partially completed seed operation to avoid orphaned domains.
+        await fetch(`/api/domains/${encodeURIComponent(persistedDomainId)}`, { method: 'DELETE' }).catch(() => undefined);
+      }
+      setDomains(prev => prev.filter(item => item.id !== newDomain.id));
+      setRecords(prev => prev.filter(item => item.domainId !== newDomain.id));
+      setSyncStatus('offline');
+      dispatchAlert('Không thể tạo domain', 'PostgreSQL chưa xác nhận thao tác; dữ liệu tạm đã được hoàn tác.', 'error', newDomain.name);
+    });
     setDomains(prev => [...prev, newDomain]);
 
     // Seed default NS records and apex A record
@@ -629,15 +677,21 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const domain = domains.find(d => d.id === id);
     if (!domain) return;
 
-    setDomains(prev => prev.filter(d => d.id !== id));
-    setRecords(prev => prev.filter(r => r.domainId !== id));
-
-    if (selectedDomainId === id) {
-      const remaining = domains.filter(d => d.id !== id);
-      if (remaining.length > 0) {
-        setSelectedDomainId(remaining[0].id);
-      }
-    }
+    // Confirm deletion in PostgreSQL before removing the domain from the UI.
+    void fetch(`/api/domains/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .then(response => { if (!response.ok) throw new Error('Domain delete failed'); })
+      .then(() => {
+        setDomains(prev => prev.filter(d => d.id !== id));
+        setRecords(prev => prev.filter(r => r.domainId !== id));
+        if (selectedDomainId === id) {
+          const remaining = domains.filter(d => d.id !== id);
+          setSelectedDomainId(remaining[0]?.id || '');
+        }
+      })
+      .catch(() => {
+        setSyncStatus('offline');
+        dispatchAlert('Không thể xóa domain', 'PostgreSQL chưa xác nhận thao tác; domain vẫn được giữ lại.', 'error', domain.name);
+      });
 
     logAudit('DELETE_RECORD', domain.name, `Xóa toàn bộ vùng tên miền ${domain.name} và tất cả bản ghi liên quan`, undefined, undefined, undefined, false);
     dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã ngừng quản lý DNS`, 'warning', domain.name);
