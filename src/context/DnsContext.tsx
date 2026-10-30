@@ -564,8 +564,18 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const payload = await response.json();
       const persisted = payload.domain;
       if (!persisted?.id) throw new Error('Missing persisted domain id');
-      setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt } : item));
-      setRecords(prev => prev.map(item => item.domainId === newDomain.id ? { ...item, domainId: persisted.id } : item));
+      const seeded = [defaultApexA, defaultCname];
+      const savedRecords = await Promise.all(seeded.map(async record => {
+        const recordResponse = await fetch(`/api/domains/${encodeURIComponent(persisted.id)}/records`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: record.type, name: record.name, content: record.content, ttl: record.ttl, proxied: record.proxied, comment: record.comment }),
+        });
+        if (!recordResponse.ok) throw new Error('Initial DNS record create failed');
+        const recordPayload = await recordResponse.json();
+        return { ...record, id: recordPayload.record.id, domainId: persisted.id, lastUpdated: recordPayload.record.updatedAt };
+      }));
+      setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt, recordCount: savedRecords.length } : item));
+      setRecords(prev => [...prev.filter(item => item.domainId !== newDomain.id), ...savedRecords]);
       setSelectedDomainId(current => current === newDomain.id ? persisted.id : current);
     }).catch(() => {
       setDomains(prev => prev.filter(item => item.id !== newDomain.id));
