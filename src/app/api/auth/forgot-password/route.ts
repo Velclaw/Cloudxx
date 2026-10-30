@@ -1,5 +1,43 @@
 import { NextResponse } from 'next/server';
-import { randomBytes,createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
-import { sendAuthEmail } from '../../../../lib/email';
-export async function POST(request:Request){try{const body=await request.json();const email=String(body.email??'').trim().toLowerCase();const user=await prisma.user.findUnique({where:{email}});if(user?.passwordHash){const raw=randomBytes(32).toString('hex');const token=createHash('sha256').update(raw).digest('hex');await prisma.verificationToken.deleteMany({where:{identifier:'reset:'+email}});await prisma.verificationToken.create({data:{identifier:'reset:'+email,token,expires:new Date(Date.now()+1800000)}});const url=new URL('/',process.env.AUTH_URL||new URL(request.url).origin);url.searchParams.set('mode','updatePassword');url.searchParams.set('token',raw);await sendAuthEmail(email,'Đặt lại mật khẩu Cloudxx',url.toString());}return NextResponse.json({ok:true});}catch{return NextResponse.json({error:'Không thể gửi email đặt lại mật khẩu.'},{status:500});}}
+import { getAuthBaseUrl, sendAuthEmail } from '../../../../lib/email';
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const email = String(body.email ?? '').trim().toLowerCase();
+
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user?.passwordHash && user.emailVerified) {
+      const raw = randomBytes(32).toString('hex');
+      const token = createHash('sha256').update(raw).digest('hex');
+
+      await prisma.verificationToken.deleteMany({ where: { identifier: `reset:${email}` } });
+      await prisma.verificationToken.create({
+        data: {
+          identifier: `reset:${email}`,
+          token,
+          expires: new Date(Date.now() + 30 * 60 * 1000),
+        },
+      });
+
+      const resetUrl = getAuthBaseUrl(request);
+      resetUrl.pathname = '/';
+      resetUrl.search = '';
+      resetUrl.searchParams.set('mode', 'updatePassword');
+      resetUrl.searchParams.set('token', raw);
+
+      await sendAuthEmail(email, 'Đặt lại mật khẩu Cloudxx', resetUrl.toString());
+    }
+
+    // Always return the same response to avoid disclosing whether an account exists.
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Không thể gửi email đặt lại mật khẩu.' }, { status: 500 });
+  }
+}
