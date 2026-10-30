@@ -1,6 +1,6 @@
 {
-  "name": "DNS Sentinel - Quản Lý DNS & Tên Miền Doanh Nghiệp",
-  "description": "Nền tảng quản lý DNS thời gian thực, tích hợp API Registrar, cảnh báo Telegram & Email, xác thực 2FA, chứng chỉ SSL và phân quyền RBAC bảo mật cao.",
+  "name": "Cloudxx - Quản Lý DNS & Tên Miền",
+  "description": "Cloudxx — giao diện quản lý tên miền, bản ghi DNS, chứng chỉ SSL, cảnh báo và phân quyền.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
