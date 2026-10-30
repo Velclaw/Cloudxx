@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { hashPassword } from '../../../../lib/password';
+import { consumeAuthRateLimit } from '../../../../lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    if (!(await consumeAuthRateLimit(request, 'reset-password', 10, 15 * 60 * 1000))) {
+      return NextResponse.json({ error: 'Quá nhiều yêu cầu. Thử lại sau.' }, { status: 429, headers: { 'Retry-After': '900' } });
+    }
+
     const body = await request.json();
     const raw = String(body.token ?? '');
     const password = String(body.password ?? '');
