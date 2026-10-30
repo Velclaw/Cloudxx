@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHash, randomBytes } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { hashPassword } from '../../../../lib/password';
-import { sendAuthEmail } from '../../../../lib/email';
+import { getAuthBaseUrl, sendAuthEmail } from '../../../../lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const password = String(body.password ?? '');
     const name = String(body.fullName ?? '').trim();
 
-    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || password.length > 128) {
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
       return NextResponse.json({ error: 'Email hoặc mật khẩu không hợp lệ.' }, { status: 400 });
     }
 
@@ -41,8 +41,9 @@ export async function POST(request: Request) {
       data: { identifier: email, token, expires: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
 
-    const baseUrl = process.env.AUTH_URL || new URL(request.url).origin;
-    const verificationUrl = new URL('/api/auth/verify-email', baseUrl);
+    const verificationUrl = getAuthBaseUrl(request);
+    verificationUrl.pathname = '/api/auth/verify-email';
+    verificationUrl.search = '';
     verificationUrl.searchParams.set('token', raw);
     verificationUrl.searchParams.set('email', email);
 
