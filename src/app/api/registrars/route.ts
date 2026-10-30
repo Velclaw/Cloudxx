@@ -5,15 +5,15 @@ import { getRequestIp, requireDnsUser } from '../../../lib/dns-api';
 const providers = ['Cloudflare','AWS Route 53','Namecheap','GoDaddy','DigitalOcean','Google Cloud','Porkbun'];
 
 export async function GET() {
-  const { userId } = await requireDnsUser();
+  const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const registrars = await prisma.registrar.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
   return NextResponse.json({ registrars });
 }
 
 export async function POST(request: Request) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const userId = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
   if (typeof body.provider !== 'string' || !providers.includes(body.provider) || typeof body.displayName !== 'string' || !body.displayName.trim() || body.displayName.length > 100) {
