@@ -6,7 +6,7 @@ import { auditPayload, getRequestIp, requireDnsUser, validRecordType } from '../
 type Context = { params: Promise<{ domainId: string; recordId: string }> };
 
 export async function PATCH(request: Request, context: Context) {
-  const { userId } = await requireDnsUser();
+  const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { domainId, recordId } = await context.params;
   const existing = await prisma.dNSRecord.findFirst({ where: { id: recordId, domainId, domain: { userId } } });
@@ -44,8 +44,8 @@ export async function PATCH(request: Request, context: Context) {
 }
 
 export async function DELETE(request: Request, context: Context) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const userId = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { domainId, recordId } = await context.params;
   const existing = await prisma.dNSRecord.findFirst({ where: { id: recordId, domainId, domain: { userId } } });
   if (!existing) return NextResponse.json({ error: 'DNS record không tồn tại.' }, { status: 404 });
