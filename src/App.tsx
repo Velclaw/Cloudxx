@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { DnsProvider, useDns } from './context/DnsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -57,7 +58,7 @@ const AppContent: React.FC = () => {
 const AuthenticatedApp: React.FC = () => {
   const { user, loading, configured, passwordRecovery } = useAuth();
   if (loading) return <div className="min-h-screen bg-black text-neutral-400 flex items-center justify-center gap-3"><LoaderCircle className="h-5 w-5 animate-spin" />Đang kiểm tra phiên đăng nhập…</div>;
-  if (!configured) return <main className="min-h-screen bg-black text-white flex items-center justify-center p-6"><section className="max-w-lg rounded-2xl border border-neutral-800 bg-neutral-950 p-6"><h1 className="text-xl font-semibold">Chưa cấu hình Supabase</h1><p className="mt-3 text-sm leading-6 text-neutral-400">Cần thiết lập VITE_SUPABASE_URL và VITE_SUPABASE_PUBLISHABLE_KEY trong môi trường build trước khi bật đăng nhập.</p></section></main>;
+  if (!configured) return <AuthScreen />;
   if (passwordRecovery) return <AuthScreen initialMode="updatePassword" />;
   return user ? <DnsProvider><AppContent /></DnsProvider> : <AuthScreen />;
 };
