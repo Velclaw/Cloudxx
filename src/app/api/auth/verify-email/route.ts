@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
+import { getAuthBaseUrl } from '../../../../lib/email';
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const raw = url.searchParams.get('token') ?? '';
-  const email = (url.searchParams.get('email') ?? '').trim().toLowerCase();
+  let redirectBase: URL;
+  try {
+    redirectBase = getAuthBaseUrl(request);
+  } catch {
+    return NextResponse.json({ error: 'AUTH_URL chưa được cấu hình an toàn.' }, { status: 500 });
+  }
+
+  const raw = new URL(request.url).searchParams.get('token') ?? '';
+  const email = (new URL(request.url).searchParams.get('email') ?? '').trim().toLowerCase();
+  const invalidUrl = new URL('/?verified=invalid', redirectBase);
 
   if (!raw || !email) {
-    return NextResponse.redirect(new URL('/?verified=invalid', url));
+    return NextResponse.redirect(invalidUrl);
   }
 
   try {
@@ -29,8 +37,8 @@ export async function GET(request: Request) {
       return true;
     });
 
-    return NextResponse.redirect(new URL(verified ? '/?verified=success' : '/?verified=invalid', url));
+    return NextResponse.redirect(new URL(verified ? '/?verified=success' : '/?verified=invalid', redirectBase));
   } catch {
-    return NextResponse.redirect(new URL('/?verified=invalid', url));
+    return NextResponse.redirect(invalidUrl);
   }
 }
