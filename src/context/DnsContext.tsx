@@ -17,7 +17,6 @@ import {
   initialRecords,
   initialRegistrars,
   initialNotificationSettings,
-  initialAuditLogs,
   initialTeamMembers,
   initialBackups,
   initialGlobalNodes,
@@ -644,21 +643,20 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Confirm deletion in PostgreSQL before removing the domain from the UI.
     void fetch(`/api/domains/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      .then(response => { if (!response.ok) throw new Error('Domain delete failed'); })
-      .then(() => {
+      .then(response => {
+        if (!response.ok) throw new Error('Domain delete failed');
         setDomains(prev => prev.filter(d => d.id !== id));
         setRecords(prev => prev.filter(r => r.domainId !== id));
         if (selectedDomainId === id) {
           const remaining = domains.filter(d => d.id !== id);
           setSelectedDomainId(remaining[0]?.id || '');
         }
+        dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã được PostgreSQL xác nhận xóa`, 'success', domain.name);
       })
       .catch(() => {
         setSyncStatus('offline');
         dispatchAlert('Không thể xóa domain', 'PostgreSQL chưa xác nhận thao tác; domain vẫn được giữ lại.', 'error', domain.name);
       });
-
-    dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã ngừng quản lý DNS`, 'warning', domain.name);
   };
 
   // Registrars
