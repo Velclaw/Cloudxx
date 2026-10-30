@@ -5,9 +5,11 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './lib/prisma';
 import bcrypt from 'bcryptjs';
+import { consumeAuthRateLimit } from './lib/rate-limit';
 export const { handlers, auth, signIn, signOut } = NextAuth({
  adapter: PrismaAdapter(prisma), trustHost: true, session:{strategy:'jwt',maxAge:30*24*60*60},
- providers:[GitHub,Google,Credentials({credentials:{email:{type:'email'},password:{type:'password'}},async authorize(credentials){
+ providers:[GitHub,Google,Credentials({credentials:{email:{type:'email'},password:{type:'password'}},async authorize(credentials, request){
+  if (!(await consumeAuthRateLimit(request, 'login', 10, 15 * 60 * 1000))) return null;
   const email=String(credentials?.email??'').trim().toLowerCase(),password=String(credentials?.password??'');
   if(!email||!password)return null;const user=await prisma.user.findUnique({where:{email}});
   if(!user?.passwordHash||!user.emailVerified||!(await bcrypt.compare(password,user.passwordHash)))return null;
