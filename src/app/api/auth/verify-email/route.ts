@@ -6,7 +6,7 @@ import { getAuthBaseUrl } from '../../../../lib/email';
 export async function GET(request: Request) {
   let redirectBase: URL;
   try {
-    redirectBase = getAuthBaseUrl(request);
+    redirectBase = getAuthBaseUrl();
   } catch {
     return NextResponse.json({ error: 'AUTH_URL chưa được cấu hình an toàn.' }, { status: 500 });
   }
