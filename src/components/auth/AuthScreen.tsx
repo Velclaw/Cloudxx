@@ -33,7 +33,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setMessage('');
     setErrorMessage('');
     try {
-      await signIn(provider, { callbackUrl: window.location.pathname });
+      await signIn(provider, { redirectTo: window.location.pathname });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể đăng nhập bằng tài khoản bên thứ ba.');
       setBusy(false);
