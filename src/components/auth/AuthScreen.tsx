@@ -10,7 +10,7 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [email, setEmail] = useState('huynhthuong.xyz@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
