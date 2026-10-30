@@ -323,7 +323,7 @@ export const NotificationSettingsView: React.FC = () => {
                   <div className="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center font-bold text-[10px]">
                     DS
                   </div>
-                  <span className="font-bold text-sky-300">DNS Sentinel Bot</span>
+                  <span className="font-bold text-sky-300">Cloudxx Bot</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">17:30</span>
               </div>
