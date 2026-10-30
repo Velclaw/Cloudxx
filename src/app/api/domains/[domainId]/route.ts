@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import type { Prisma } from '../../../../generated/prisma/client';
+import type { Prisma } from '../../../../../generated/prisma/client';
 import { auditPayload, getRequestIp, requireDnsUser, validDomainName } from '../../../../lib/dns-api';
 
 type Context = { params: Promise<{ domainId: string }> };
 
 export async function GET(_request: Request, context: Context) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const { userId } = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { domainId } = await context.params;
   const domain = await prisma.domain.findFirst({ where: { id: domainId, userId }, include: { records: true } });
   if (!domain) return NextResponse.json({ error: 'Domain không tồn tại.' }, { status: 404 });
