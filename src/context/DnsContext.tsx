@@ -557,6 +557,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt, recordCount: savedRecords.length } : item));
       setRecords(prev => [...prev.filter(item => item.domainId !== newDomain.id), ...savedRecords]);
       setSelectedDomainId(current => current === newDomain.id ? persisted.id : current);
+      dispatchAlert('Tên miền mới đã thêm', `${newDomain.name} đã được PostgreSQL xác nhận cùng ${savedRecords.length} bản ghi DNS khởi tạo`, 'success', newDomain.name);
     }).catch(async () => {
       if (persistedDomainId) {
         // Compensate a partially completed seed operation to avoid orphaned domains.
@@ -608,9 +609,6 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setRecords(prev => [...prev, defaultApexA, defaultCname]);
     setSelectedDomainId(newDomain.id);
-
-    logAudit('DOMAIN_ADDED', newDomain.name, `Đăng ký & ủy quyền quản lý tên miền mới qua ${newDomain.registrar}`, undefined, undefined, undefined, false);
-    dispatchAlert('Tên miền mới đã thêm', `${newDomain.name} đã được thiết lập vùng DNS`, 'success', newDomain.name);
 
     return newDomain;
   };
