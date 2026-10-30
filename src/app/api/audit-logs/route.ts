@@ -20,7 +20,9 @@ const actionLabels: Record<string, string> = {
   DNS_RECORD_DELETED: 'DELETE_RECORD',
 };
 
-type AuditLogWithRelations = Prisma.AuditLogGetPayload<{\n  include: { user: { select: { name: true; email: true; image: true } }; domain: { select: { name: true } } };\n}>;\n\nfunction toAuditEntry(log: AuditLogWithRelations) {
+type AuditLogWithRelations = Prisma.AuditLogGetPayload<{ include: { user: { select: { name: true; email: true; image: true } }; domain: { select: { name: true } } } }>;
+
+function toAuditEntry(log: AuditLogWithRelations) {
   const before = log.before && typeof log.before === 'object' ? log.before : undefined;
   const after = log.after && typeof log.after === 'object' ? log.after : undefined;
   const record = after || before;
