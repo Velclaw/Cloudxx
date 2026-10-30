@@ -18,21 +18,22 @@ export async function POST(request: Request) {
     const now = new Date();
 
     const consumed = await prisma.$transaction(async (tx) => {
-      const result = await tx.verificationToken.deleteMany({
+      const record = await tx.verificationToken.findFirst({
         where: { identifier: { startsWith: 'reset:' }, token, expires: { gt: now } },
+        select: { identifier: true },
       });
 
+      if (!record) return false;
+
+      const result = await tx.verificationToken.deleteMany({
+        where: { identifier: record.identifier, token, expires: { gt: now } },
+      });
       if (result.count !== 1) return false;
 
-      const email = (await tx.verificationToken.findFirst({
-        where: { identifier: { startsWith: 'reset:' }, token },
-        select: { identifier: true },
-      }))?.identifier.slice(6);
-
-      // The token is consumed atomically below; resolve its owner before deletion in the
-      // initial lookup to prevent two concurrent requests from reusing the same token.
-      if (!email) return false;
-      await tx.user.update({ where: { email }, data: { passwordHash } });
+      await tx.user.update({
+        where: { email: record.identifier.slice(6) },
+        data: { passwordHash },
+      });
       return true;
     });
 
