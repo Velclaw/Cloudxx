@@ -5,7 +5,7 @@ import { auditPayload, getRequestIp, requireDnsUser, validRecordType } from '../
 type Context = { params: Promise<{ domainId: string }> };
 
 export async function GET(_request: Request, context: Context) {
-  const { userId } = await requireDnsUser();
+  const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { domainId } = await context.params;
   const domain = await prisma.domain.findFirst({ where: { id: domainId, userId }, select: { id: true } });
@@ -15,8 +15,8 @@ export async function GET(_request: Request, context: Context) {
 }
 
 export async function POST(request: Request, context: Context) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const userId = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { domainId } = await context.params;
   const domain = await prisma.domain.findFirst({ where: { id: domainId, userId } });
   if (!domain) return NextResponse.json({ error: 'Domain không tồn tại.' }, { status: 404 });
