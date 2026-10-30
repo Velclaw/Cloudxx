@@ -7,7 +7,7 @@ const providers = ['Cloudflare','AWS Route 53','Namecheap','GoDaddy','DigitalOce
 export async function GET() {
   const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const registrars = await prisma.registrar.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
+  const registrars = await prisma.registrar.findMany({ where: { userId }, select: { id: true, provider: true, displayName: true, accountEmail: true, status: true, lastSyncedAt: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: 'desc' } });
   return NextResponse.json({ registrars });
 }
 
