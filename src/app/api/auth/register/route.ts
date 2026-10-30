@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const password = String(body.password ?? '');
     const name = String(body.fullName ?? '').trim();
 
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
       return NextResponse.json({ error: 'Email hoặc mật khẩu không hợp lệ.' }, { status: 400 });
     }
 
@@ -41,6 +41,9 @@ export async function POST(request: Request) {
 
     const raw = randomBytes(32).toString('hex');
     const token = createHash('sha256').update(raw).digest('hex');
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: email, expires: { lte: new Date() } },
+    });
     await prisma.verificationToken.create({
       data: { identifier: email, token, expires: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
