@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { requireDnsUser } from '../../../lib/dns-api';
 
 export async function GET(request: Request) {
-  const { userId } = await requireDnsUser();
+  const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const url = new URL(request.url);
   const requested = Number(url.searchParams.get('limit') ?? 50);
