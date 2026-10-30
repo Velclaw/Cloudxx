@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarDays, LogOut, Save, UserRound, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+
 
 interface Profile {
   full_name: string;
@@ -23,21 +23,7 @@ export const ProfilePanel: React.FC = () => {
   useEffect(() => {
     if (!user || !open) return;
     let active = true;
-    supabase.from('profiles')
-      .select('full_name, username, phone, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) setErrorMessage(error.message);
-        if (data) setProfile({
-          full_name: data.full_name ?? '',
-          username: data.username ?? '',
-          phone: data.phone ?? '',
-          avatar_url: data.avatar_url ?? '',
-        });
-        else setProfile({ ...emptyProfile, full_name: String(user.user_metadata?.full_name ?? '') });
-      });
+    fetch('/api/profile').then(async response => { if (!response.ok) throw new Error('Không thể tải hồ sơ.'); return response.json(); }).then(data => { if (!active) return; setProfile({ full_name: data.fullName ?? String(user.name ?? ''), username: data.username ?? '', phone: data.phone ?? '', avatar_url: data.avatarUrl ?? '' }); }).catch(error => { if (active) setErrorMessage(error.message); });
     return () => { active = false; };
   }, [user, open]);
 
@@ -49,15 +35,8 @@ export const ProfilePanel: React.FC = () => {
     setNotice('');
     setErrorMessage('');
     try {
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        full_name: profile.full_name.trim(),
-        username: profile.username.trim() || null,
-        phone: profile.phone.trim() || null,
-        avatar_url: profile.avatar_url.trim() || null,
-        updated_at: new Date().toISOString(),
-      });
-      if (error) throw error;
+      const response = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile) });
+      const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể lưu hồ sơ.');
       setNotice('Hồ sơ đã được lưu vào cơ sở dữ liệu.');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể lưu hồ sơ.');
