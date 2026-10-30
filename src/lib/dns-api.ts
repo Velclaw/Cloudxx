@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { auth } from '../auth';
 import type { Prisma } from '../../generated/prisma/client';
 export { validDomainName, validRecordType } from './dns-validation';
