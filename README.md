@@ -40,6 +40,14 @@ The publishable key is intended for browser applications. **Never** put a Supaba
 
 The login screen starts with `huynhthuong.xyz@gmail.com` prefilled as requested; this does not create an account or bypass email verification. The user must choose and keep their own password.
 
+## Social sign-in (GitHub and Google)
+
+The login screen supports Supabase Auth OAuth for GitHub and Google. Enable each provider in Supabase Dashboard > Authentication > Sign In / Providers and enter the corresponding OAuth client ID and client secret there (never in this repository or any `VITE_*` variable).
+
+For each OAuth app, register the Supabase project's callback URL shown in its provider settings (typically `https://<project-ref>.supabase.co/auth/v1/callback`). In Supabase Authentication > URL Configuration, allow the deployed Cloudxx origin and the exact redirect URL used by the app.
+
+The URL `https://cloudxx.velclaw.app/api/v1/auth/oauth/github/callback` is a separate backend callback. It is not interchangeable with Supabase's callback URL. The current Cloudxx source uses Supabase Auth for session management and does not contain a verified backend OAuth route or session-exchange contract. Do not configure the provider to call both callbacks or paste OAuth client secrets into source files. A separate backend OAuth flow requires a working server endpoint and a secure, documented way to establish the same application session.
+
 ## Profile data and authorization
 
 The profile table stores full name, username, phone, avatar URL, and timestamps. RLS permits authenticated users to select, insert, and update only the row whose `id` equals `auth.uid()`. Anonymous access is revoked. The database trigger creates a profile row for new Auth users.
