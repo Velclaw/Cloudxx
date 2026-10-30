@@ -15,7 +15,8 @@
     "pretypecheck": "prisma generate",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
