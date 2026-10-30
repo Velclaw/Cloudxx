@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { DnsProvider, useDns } from './context/DnsContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthScreen } from './components/auth/AuthScreen';
+import { ProfilePanel } from './components/account/ProfilePanel';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
@@ -17,11 +20,10 @@ import { DeveloperApiDocs } from './components/api/DeveloperApiDocs';
 import { RecordModal } from './components/records/RecordModal';
 import { GlobalCommandPalette } from './components/common/GlobalCommandPalette';
 import { DNSRecord } from './types/dns';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, LoaderCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { activeTab, isOffline, toggleOfflineMode } = useDns();
-
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<DNSRecord | null>(null);
 
@@ -37,42 +39,23 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-neutral-100 flex flex-col font-sans transition-colors antialiased selection:bg-neutral-800 selection:text-white">
-      {/* Offline Alert Ribbon if in offline mode */}
       {isOffline && (
         <div className="bg-amber-500 text-black px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-md z-50">
           <div className="flex items-center gap-2 max-w-7xl mx-auto w-full justify-between">
             <div className="flex items-center gap-2">
               <WifiOff className="w-4 h-4 shrink-0" />
-              <span>
-                Chế Độ Ngoại Tuyến (Offline Mode) đang kích hoạt. Dữ liệu được lưu trong bộ nhớ đệm cục bộ và sẽ tự động đồng bộ khi có kết nối lại.
-              </span>
+              <span>Chế Độ Ngoại Tuyến (Offline Mode) đang kích hoạt. Dữ liệu được lưu trong bộ nhớ đệm cục bộ và sẽ tự động đồng bộ khi có kết nối lại.</span>
             </div>
-            <button
-              onClick={toggleOfflineMode}
-              className="px-3 py-1 bg-black text-white rounded font-mono text-[11px] font-bold shrink-0 hover:bg-neutral-900 cursor-pointer"
-            >
-              Kết nối lại
-            </button>
+            <button onClick={toggleOfflineMode} className="px-3 py-1 bg-black text-white rounded font-mono text-[11px] font-bold shrink-0 hover:bg-neutral-900 cursor-pointer">Kết nối lại</button>
           </div>
         </div>
       )}
-
-      {/* 3-Zone Contract Top Navbar */}
       <Navbar onOpenAddModal={handleOpenAddRecord} />
-
-      {/* Main Container with Sidebar and Content Viewport */}
       <div className="flex-1 flex max-w-[1600px] w-full mx-auto">
         <Sidebar />
-
-        {/* Content Viewport with mobile bottom padding */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 overflow-y-auto max-w-full pb-24 md:pb-8">
           {activeTab === 'dashboard' && <OverviewDashboard onOpenAddModal={handleOpenAddRecord} />}
-          {activeTab === 'records' && (
-            <DnsRecordsManager
-              onOpenAddModal={handleOpenAddRecord}
-              onEditRecord={handleEditRecord}
-            />
-          )}
+          {activeTab === 'records' && <DnsRecordsManager onOpenAddModal={handleOpenAddRecord} onEditRecord={handleEditRecord} />}
           {activeTab === 'domains' && <DomainSslManager />}
           {activeTab === 'registrars' && <RegistrarApiManager />}
           {activeTab === 'notifications' && <NotificationSettingsView />}
@@ -84,27 +67,28 @@ const AppContent: React.FC = () => {
           {activeTab === 'api' && <DeveloperApiDocs />}
         </main>
       </div>
-
-      {/* Mobile Ergonomic Bottom Navigation Bar */}
       <MobileBottomNav />
-
-      {/* Global Add / Edit Record Modal (Slides up as Bottom Sheet on Mobile) */}
-      <RecordModal
-        isOpen={isRecordModalOpen}
-        onClose={() => setIsRecordModalOpen(false)}
-        editRecord={editingRecord}
-      />
-
-      {/* Global Command Palette Search Modal (⌘K / Ctrl+K) */}
+      <RecordModal isOpen={isRecordModalOpen} onClose={() => setIsRecordModalOpen(false)} editRecord={editingRecord} />
       <GlobalCommandPalette />
+      <ProfilePanel />
     </div>
   );
 };
 
+const AuthenticatedApp: React.FC = () => {
+  const { user, loading, configured } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen bg-black text-neutral-400 flex items-center justify-center gap-3"><LoaderCircle className="h-5 w-5 animate-spin" />Đang kiểm tra phiên đăng nhập…</div>;
+  }
+
+  if (!configured) {
+    return <main className="min-h-screen bg-black text-white flex items-center justify-center p-6"><section className="max-w-lg rounded-2xl border border-neutral-800 bg-neutral-950 p-6"><h1 className="text-xl font-semibold">Chưa cấu hình Supabase</h1><p className="mt-3 text-sm leading-6 text-neutral-400">Cần thiết lập VITE_SUPABASE_URL và VITE_SUPABASE_PUBLISHABLE_KEY trong môi trường build trước khi bật đăng nhập.</p></section></main>;
+  }
+
+  return user ? <DnsProvider><AppContent /></DnsProvider> : <AuthScreen />;
+};
+
 export default function App() {
-  return (
-    <DnsProvider>
-      <AppContent />
-    </DnsProvider>
-  );
-}
+  return <AuthProvider><AuthenticatedApp /></AuthProvider>;
+};
