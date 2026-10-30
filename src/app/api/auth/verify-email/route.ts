@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { escapeHtml, getAuthBaseUrl } from '../../../../lib/email';
+import { consumeAuthRateLimit } from '../../../../lib/rate-limit';
 
 function redirectToStatus(status: 'success' | 'invalid') {
   return NextResponse.redirect(new URL(`/?verified=${status}`, getAuthBaseUrl()));
@@ -55,6 +56,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!(await consumeAuthRateLimit(request, 'verify-email', 10, 15 * 60 * 1000))) {
+      return NextResponse.json({ error: 'Quá nhiều yêu cầu. Thử lại sau.' }, { status: 429, headers: { 'Retry-After': '900' } });
+    }
+
     const form = await request.formData();
     const raw = String(form.get('token') ?? '');
     const email = String(form.get('email') ?? '').trim().toLowerCase();

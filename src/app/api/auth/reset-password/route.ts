@@ -19,7 +19,6 @@ export async function POST(request: Request) {
     }
 
     const token = createHash('sha256').update(raw).digest('hex');
-    const passwordHash = await hashPassword(password);
     const now = new Date();
 
     const consumed = await prisma.$transaction(async (tx) => {
@@ -34,6 +33,8 @@ export async function POST(request: Request) {
         where: { identifier: record.identifier, token, expires: { gt: now } },
       });
       if (result.count !== 1) return false;
+
+      const passwordHash = await hashPassword(password);
 
       await tx.user.update({
         where: { email: record.identifier.slice(6) },

@@ -6,10 +6,13 @@
     "node": "22.x"
   },
   "scripts": {
+    "predev": "prisma generate",
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "build": "prisma generate && next build",
     "start": "next start",
+    "prelint": "prisma generate",
     "lint": "tsc --noEmit",
+    "pretypecheck": "prisma generate",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy"

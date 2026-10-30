@@ -49,7 +49,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
       if (mode === 'register') {
         const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase(), password, fullName: fullName.trim() }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể đăng ký.');
-        setMessage('Đã gửi email xác minh. Mở hộp thư và xác nhận trước khi đăng nhập.');
+        setMessage('Nếu địa chỉ email có thể đăng ký, hướng dẫn xác minh sẽ được gửi.');
       } else if (mode === 'reset') {
         const response = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase() }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể gửi email.');
         setMessage('Nếu địa chỉ email hợp lệ, hướng dẫn đặt lại mật khẩu đã được gửi.');

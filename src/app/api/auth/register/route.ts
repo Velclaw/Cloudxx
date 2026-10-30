@@ -41,7 +41,6 @@ export async function POST(request: Request) {
 
     const raw = randomBytes(32).toString('hex');
     const token = createHash('sha256').update(raw).digest('hex');
-    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
     await prisma.verificationToken.create({
       data: { identifier: email, token, expires: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });

@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
 import { prisma } from './prisma';
 
+const RATE_LIMIT_RETENTION_MS = 15 * 60 * 1000;
+const RATE_LIMIT_CLEANUP_SAMPLE_RATE = 0.01;
+
 export async function consumeAuthRateLimit(
   request: { headers: Headers },
   scope: string,
@@ -29,5 +32,28 @@ export async function consumeAuthRateLimit(
     RETURNING "attempts"
   `;
 
-  return (rows[0]?.attempts ?? maxAttempts + 1) <= maxAttempts;
+  const allowed = (rows[0]?.attempts ?? maxAttempts + 1) <= maxAttempts;
+
+  // All current auth scopes use 15-minute windows. Keep cleanup sampled and
+  // bounded so expired keys do not grow forever or add work to every request.
+  if (Math.random() < RATE_LIMIT_CLEANUP_SAMPLE_RATE) {
+    const expiredBefore = new Date(now.getTime() - RATE_LIMIT_RETENTION_MS);
+    try {
+      await prisma.$executeRaw`
+        DELETE FROM "AuthRateLimit"
+        WHERE "updatedAt" < ${expiredBefore}
+          AND "key" IN (
+            SELECT "key"
+            FROM "AuthRateLimit"
+            WHERE "updatedAt" < ${expiredBefore}
+            ORDER BY "updatedAt" ASC
+            LIMIT 500
+          )
+      `;
+    } catch {
+      // Retention is best-effort; it must not block authentication requests.
+    }
+  }
+
+  return allowed;
 }
