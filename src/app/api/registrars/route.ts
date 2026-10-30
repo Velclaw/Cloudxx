@@ -5,8 +5,8 @@ import { getRequestIp, requireDnsUser } from '../../../lib/dns-api';
 const providers = ['Cloudflare','AWS Route 53','Namecheap','GoDaddy','DigitalOcean','Google Cloud','Porkbun'];
 
 export async function GET() {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const { userId } = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const registrars = await prisma.registrar.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
   return NextResponse.json({ registrars });
 }
