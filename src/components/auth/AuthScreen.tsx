@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Activity, ArrowRight, Chrome, Github, KeyRound, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
@@ -10,6 +10,7 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('mode') === 'updatePassword') setMode('updatePassword'); const verified = new URLSearchParams(window.location.search).get('verified'); if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.'); if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.'); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
