@@ -13,6 +13,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   if(!user?.passwordHash||!user.emailVerified||!(await bcrypt.compare(password,user.passwordHash)))return null;
   return {id:user.id,email:user.email,name:user.name,image:user.image,createdAt:user.createdAt.toISOString(),emailVerified:user.emailVerified.toISOString()};
  }})],
- callbacks:{async jwt({token,user}){if(user){const u=user as {createdAt?:string;emailVerified?:string};token.createdAt=u.createdAt;token.emailVerified=u.emailVerified;}return token;},async session({session,token}){if(session.user&&token.sub){session.user.id=token.sub;session.user.createdAt=typeof token.createdAt==='string'?token.createdAt:null;session.user.emailVerified=typeof token.emailVerified==='string'?token.emailVerified:undefined;}return session;}},
+ callbacks:{async jwt({token,user}){if(user){const u=user as {createdAt?:string;emailVerified?:string};token.createdAt=u.createdAt;token.emailVerified=u.emailVerified;}return token;},async session({session,token}){if(session.user&&token.sub){session.user.id=token.sub;session.user.createdAt=typeof token.createdAt==='string'?token.createdAt:undefined;session.user.emailVerified=typeof token.emailVerified==='string'?token.emailVerified:undefined;}return session;}},
  pages:{signIn:'/'},
 });
