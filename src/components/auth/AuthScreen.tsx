@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ArrowRight, KeyRound, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
+import { Activity, ArrowRight, Chrome, Github, KeyRound, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type AuthMode = 'login' | 'register' | 'reset' | 'updatePassword';
@@ -24,6 +24,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setConfirmPassword('');
     setMessage('');
     setErrorMessage('');
+  };
+
+  const signInWithProvider = async (provider: 'github' | 'google') => {
+    setBusy(true);
+    setMessage('');
+    setErrorMessage('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+          ...(provider === 'github' ? { scopes: 'read:user user:email' } : {}),
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể đăng nhập bằng tài khoản bên thứ ba.');
+      setBusy(false);
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -147,6 +166,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
             {busy ? <Activity className="h-4 w-4 animate-spin" /> : mode === 'reset' ? <KeyRound className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
             {busy ? 'Đang xử lý…' : title}
           </button>
+
+          {mode === 'login' && (
+            <div className="mt-5">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-neutral-800" /></div>
+                <div className="relative flex justify-center"><span className="bg-neutral-950 px-3 text-xs text-neutral-500">Hoặc tiếp tục với</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => signInWithProvider('github')} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60">
+                  <Github className="h-4 w-4" /> GitHub
+                </button>
+                <button type="button" onClick={() => signInWithProvider('google')} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60">
+                  <Chrome className="h-4 w-4" /> Google
+                </button>
+              </div>
+            </div>
+          )}
 
           {mode !== 'updatePassword' && (
             <div className="mt-5 border-t border-neutral-800 pt-4 text-center text-sm text-neutral-400">
