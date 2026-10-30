@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { getRequestIp, requireDnsUser } from '../../../../../lib/dns-api';
+import { getRequestIp, requireDnsUser } from '../../../../lib/dns-api';
 
 type Context = { params: Promise<{ registrarId: string }> };
 
