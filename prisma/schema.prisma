@@ -58,3 +58,12 @@ model Profile {
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model AuthRateLimit {
+  key             String   @id
+  windowStartedAt DateTime
+  attempts        Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
