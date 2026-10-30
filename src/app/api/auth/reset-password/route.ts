@@ -34,6 +34,11 @@ export async function POST(request: Request) {
       });
       if (result.count !== 1) return false;
 
+      // Revoke every outstanding reset link for this account after consuming one.
+      await tx.verificationToken.deleteMany({
+        where: { identifier: record.identifier },
+      });
+
       const passwordHash = await hashPassword(password);
 
       await tx.user.update({
