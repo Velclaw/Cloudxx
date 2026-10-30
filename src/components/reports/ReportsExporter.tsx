@@ -39,13 +39,13 @@ export const ReportsExporter: React.FC = () => {
   const handleDownloadJson = () => {
     const reportData = {
       generatedAt: new Date().toISOString(),
-      platform: 'DNS Sentinel Enterprise',
+      platform: 'Cloudxx',
       domainFilter: selectedDomainFilter,
       records: targetRecords,
       auditLogs: includeAuditLogs ? auditLogs.slice(0, 20) : []
     };
     const jsonStr = JSON.stringify(reportData, null, 2);
-    downloadFile(jsonStr, `DNS_Report_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    downloadFile(jsonStr, `Cloudxx_Report_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
   };
 
   return (
@@ -282,7 +282,7 @@ export const ReportsExporter: React.FC = () => {
         {/* Report Footer / Signature */}
         <div className="pt-8 border-t border-slate-300 flex items-center justify-between text-xs text-slate-600">
           <div>
-            <span className="block font-semibold text-slate-800">DNS Sentinel Enterprise Auditor</span>
+            <span className="block font-semibold text-slate-800">Cloudxx Auditor</span>
             <span>Chữ ký số: SHA256:7f81b2a99c01824efb12</span>
           </div>
           <div className="text-right">
