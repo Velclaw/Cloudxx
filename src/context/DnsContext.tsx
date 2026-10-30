@@ -570,6 +570,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // Persist the domain first; replace the temporary UI id with the database id.
+    let persistedDomainId: string | undefined;
     void fetch('/api/domains', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newDomain.name, registrar: newDomain.registrar, autoRenew: newDomain.autoRenew, nameservers: newDomain.nameservers, dnssec: newDomain.dnssec, environment: newDomain.environment }),
@@ -578,6 +579,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const payload = await response.json();
       const persisted = payload.domain;
       if (!persisted?.id) throw new Error('Missing persisted domain id');
+      persistedDomainId = persisted.id;
       const seeded = [defaultApexA, defaultCname];
       const savedRecords = await Promise.all(seeded.map(async record => {
         const recordResponse = await fetch(`/api/domains/${encodeURIComponent(persisted.id)}/records`, {
@@ -591,7 +593,11 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDomains(prev => prev.map(item => item.id === newDomain.id ? { ...item, id: persisted.id, createdAt: persisted.createdAt, recordCount: savedRecords.length } : item));
       setRecords(prev => [...prev.filter(item => item.domainId !== newDomain.id), ...savedRecords]);
       setSelectedDomainId(current => current === newDomain.id ? persisted.id : current);
-    }).catch(() => {
+    }).catch(async () => {
+      if (persistedDomainId) {
+        // Compensate a partially completed seed operation to avoid orphaned domains.
+        await fetch(`/api/domains/${encodeURIComponent(persistedDomainId)}`, { method: 'DELETE' }).catch(() => undefined);
+      }
       setDomains(prev => prev.filter(item => item.id !== newDomain.id));
       setRecords(prev => prev.filter(item => item.domainId !== newDomain.id));
       setSyncStatus('offline');
