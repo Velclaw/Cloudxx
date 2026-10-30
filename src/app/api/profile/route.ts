@@ -1,0 +1,5 @@
+import { NextResponse } from 'next/server';
+import { auth } from '../../../auth';
+import { prisma } from '../../../lib/prisma';
+export async function GET(){const session=await auth();if(!session?.user?.id)return NextResponse.json({error:'Unauthorized'},{status:401});const profile=await prisma.profile.findUnique({where:{userId:session.user.id}});return NextResponse.json(profile??{});}
+export async function PUT(request:Request){const session=await auth();if(!session?.user?.id)return NextResponse.json({error:'Unauthorized'},{status:401});try{const body=await request.json();const data={fullName:String(body.full_name??'').slice(0,120),username:String(body.username??'').slice(0,40)||null,phone:String(body.phone??'').slice(0,30)||null,avatarUrl:String(body.avatar_url??'').slice(0,2048)||null};const profile=await prisma.profile.upsert({where:{userId:session.user.id},create:{userId:session.user.id,...data},update:data});return NextResponse.json(profile);}catch{return NextResponse.json({error:'Không thể lưu hồ sơ.'},{status:400});}}

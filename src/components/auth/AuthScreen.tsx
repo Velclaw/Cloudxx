@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Activity, ArrowRight, KeyRound, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Activity, ArrowRight, Chrome, Github, KeyRound, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 type AuthMode = 'login' | 'register' | 'reset' | 'updatePassword';
 
@@ -10,6 +11,7 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('mode') === 'updatePassword') setMode('updatePassword'); const verified = new URLSearchParams(window.location.search).get('verified'); if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.'); if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.'); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,6 +28,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setErrorMessage('');
   };
 
+  const signInWithProvider = async (provider: 'github' | 'google') => {
+    setBusy(true);
+    setMessage('');
+    setErrorMessage('');
+    try {
+      await signIn(provider, { redirectTo: window.location.pathname });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể đăng nhập bằng tài khoản bên thứ ba.');
+      setBusy(false);
+    }
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
@@ -33,35 +47,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setErrorMessage('');
     try {
       if (mode === 'register') {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: {
-            data: { full_name: fullName.trim() },
-            emailRedirectTo: window.location.origin + window.location.pathname,
-          },
-        });
-        if (error) throw error;
-        setMessage(data.session
-          ? 'Đăng ký thành công. Tài khoản đã được đăng nhập.'
-          : 'Đã gửi email xác minh. Mở hộp thư và xác nhận trước khi đăng nhập.');
+        const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase(), password, fullName: fullName.trim() }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể đăng ký.');
+        setMessage('Nếu địa chỉ email có thể đăng ký, hướng dẫn xác minh sẽ được gửi.');
       } else if (mode === 'reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-          redirectTo: window.location.origin + window.location.pathname,
-        });
-        if (error) throw error;
+        const response = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase() }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể gửi email.');
         setMessage('Nếu địa chỉ email hợp lệ, hướng dẫn đặt lại mật khẩu đã được gửi.');
       } else if (mode === 'updatePassword') {
         if (password !== confirmPassword) throw new Error('Hai mật khẩu không khớp.');
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-        setMessage('Đã cập nhật mật khẩu. Phiên đăng nhập sẽ tiếp tục.');
+        const token = new URLSearchParams(window.location.search).get('token'); if (!token) throw new Error('Liên kết đặt lại mật khẩu không hợp lệ.'); const response = await fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể cập nhật mật khẩu.'); setMessage('Đã cập nhật mật khẩu. Hãy đăng nhập lại.');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
-        });
-        if (error) throw error;
+        const result = await signIn('credentials', { email: email.trim().toLowerCase(), password, redirect: false }); if (result?.error) throw new Error('Email hoặc mật khẩu không đúng, hoặc email chưa được xác minh.'); window.location.assign('/');
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu. Vui lòng thử lại.');
@@ -148,6 +144,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
             {busy ? 'Đang xử lý…' : title}
           </button>
 
+          {mode === 'login' && (
+            <div className="mt-5">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-neutral-800" /></div>
+                <div className="relative flex justify-center"><span className="bg-neutral-950 px-3 text-xs text-neutral-500">Hoặc tiếp tục với</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => signInWithProvider('github')} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60">
+                  <Github className="h-4 w-4" /> GitHub
+                </button>
+                <button type="button" onClick={() => signInWithProvider('google')} disabled={busy} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60">
+                  <Chrome className="h-4 w-4" /> Google
+                </button>
+              </div>
+            </div>
+          )}
+
           {mode !== 'updatePassword' && (
             <div className="mt-5 border-t border-neutral-800 pt-4 text-center text-sm text-neutral-400">
               {mode === 'login' ? (
@@ -158,7 +171,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
             </div>
           )}
         </form>
-        <p className="mt-5 text-center text-[11px] leading-5 text-neutral-600">Mật khẩu được xử lý bởi Supabase Auth. Không lưu mật khẩu trong trình duyệt hoặc mã nguồn.</p>
+        <p className="mt-5 text-center text-[11px] leading-5 text-neutral-600">Mật khẩu được mã hóa bcrypt và xác thực qua Auth.js.</p>
       </section>
     </main>
   );
