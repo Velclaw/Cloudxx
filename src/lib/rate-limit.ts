@@ -7,10 +7,8 @@ export async function consumeAuthRateLimit(
   maxAttempts: number,
   windowMs: number,
 ): Promise<boolean> {
-  const address =
-    request.headers.get('x-real-ip') ??
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown';
+  // x-real-ip is set by the trusted hosting proxy; do not trust client-supplied X-Forwarded-For.
+  const address = request.headers.get('x-real-ip') ?? 'unknown';
   const key = createHash('sha256').update(`${scope}:${address}`).digest('hex');
   const now = new Date();
   const windowExpiredBefore = new Date(now.getTime() - windowMs);
