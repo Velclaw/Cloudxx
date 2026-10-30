@@ -379,7 +379,12 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!response.ok) throw new Error('DNS record save failed');
       const payload = await response.json();
       if (payload.record?.id) setRecords(prev => prev.map(item => item.id === newRecord.id ? { ...item, id: payload.record.id, lastUpdated: payload.record.updatedAt } : item));
-    }).catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể lưu DNS record', 'API/PostgreSQL chưa sẵn sàng; thay đổi chưa được đồng bộ.', 'error', recordData.domainName); });
+    }).catch(() => {
+      setRecords(prev => prev.filter(item => item.id !== newRecord.id));
+      setDomains(prev => prev.map(d => d.id === recordData.domainId ? { ...d, recordCount: Math.max(0, d.recordCount - 1) } : d));
+      setSyncStatus('offline');
+      dispatchAlert('Không thể lưu DNS record', 'PostgreSQL chưa xác nhận thao tác; thay đổi tạm đã được hoàn tác.', 'error', recordData.domainName);
+    });
 
     // Update domain record count
     setDomains(prev => prev.map(d => d.id === recordData.domainId ? { ...d, recordCount: d.recordCount + 1 } : d));
@@ -420,7 +425,11 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: updates.type, name: updates.name, content: updates.content, ttl: updates.ttl, proxied: updates.proxied, comment: updates.comment }),
     }).then(response => { if (!response.ok) throw new Error('DNS record update failed'); })
-      .catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể cập nhật DNS record', 'Thay đổi chưa được đồng bộ với PostgreSQL.', 'error', existing.domainName); });
+      .catch(() => {
+        setRecords(prev => prev.map(r => r.id === id ? existing : r));
+        setSyncStatus('offline');
+        dispatchAlert('Không thể cập nhật DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi cũ đã được khôi phục.', 'error', existing.domainName);
+      });
 
     logAudit(
       'UPDATE_RECORD',
@@ -447,7 +456,12 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRecords(prev => prev.filter(r => r.id !== id));
     void fetch(`/api/domains/${encodeURIComponent(existing.domainId)}/records/${encodeURIComponent(id)}`, { method: 'DELETE' })
       .then(response => { if (!response.ok) throw new Error('DNS record delete failed'); })
-      .catch(() => { setSyncStatus('offline'); dispatchAlert('Không thể xóa DNS record', 'Yêu cầu xóa chưa được xác nhận bởi PostgreSQL.', 'error', existing.domainName); });
+      .catch(() => {
+        setRecords(prev => prev.some(r => r.id === id) ? prev : [...prev, existing]);
+        setDomains(prev => prev.map(d => d.id === existing.domainId ? { ...d, recordCount: d.recordCount + 1 } : d));
+        setSyncStatus('offline');
+        dispatchAlert('Không thể xóa DNS record', 'PostgreSQL chưa xác nhận thao tác; bản ghi đã được khôi phục.', 'error', existing.domainName);
+      });
     setDomains(prev => prev.map(d => d.id === existing.domainId ? { ...d, recordCount: Math.max(0, d.recordCount - 1) } : d));
 
     logAudit(
