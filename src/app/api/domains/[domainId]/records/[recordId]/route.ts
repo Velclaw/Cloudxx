@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
+import type { Prisma } from '../../../../../../../generated/prisma/client';
 import { auditPayload, getRequestIp, requireDnsUser, validRecordType } from '../../../../../../lib/dns-api';
 
 type Context = { params: Promise<{ domainId: string; recordId: string }> };
@@ -35,7 +36,7 @@ export async function PATCH(request: Request, context: Context) {
   if (typeof body.proxied === 'boolean') data.proxied = body.proxied;
   if (typeof body.comment === 'string' || body.comment === null) data.comment = body.comment;
   const record = await prisma.$transaction(async tx => {
-    const updated = await tx.dNSRecord.update({ where: { id: recordId }, data });
+    const updated = await tx.dNSRecord.update({ where: { id: recordId }, data: data as Prisma.DNSRecordUpdateInput });
     await tx.auditLog.create({ data: { userId, domainId, action: 'DNS_RECORD_UPDATED', details: `Updated ${updated.type} record ${updated.name}`, ipAddress: getRequestIp(request), before: auditPayload(existing), after: auditPayload(updated) } });
     return updated;
   });
