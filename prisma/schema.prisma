@@ -116,6 +116,7 @@ model Registrar {
   provider     String
   displayName  String
   accountEmail String?
+  encryptedCredentials String? @db.Text
   status       String   @default("disconnected")
   lastSyncedAt DateTime?
   createdAt    DateTime @default(now())
