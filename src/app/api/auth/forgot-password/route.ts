@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         },
       });
 
-      const resetUrl = getAuthBaseUrl(request);
+      const resetUrl = getAuthBaseUrl();
       resetUrl.pathname = '/';
       resetUrl.search = '';
       resetUrl.searchParams.set('mode', 'updatePassword');
