@@ -9,7 +9,7 @@ export function generateBindZoneFile(domain: DomainZone, records: DNSRecord[]): 
   
   let output = `; ====================================================================
 ; BIND Zone File for domain: ${domain.name}
-; Exported from DNS Sentinel Enterprise Platform
+; Exported from Cloudxx Enterprise Platform
 ; Export Timestamp: ${new Date().toUTCString()}
 ; ====================================================================
 
