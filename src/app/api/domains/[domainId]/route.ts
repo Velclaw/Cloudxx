@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import type { Prisma } from '../../../../../generated/prisma/client';
 import { auditPayload, getRequestIp, requireDnsUser, validDomainName } from '../../../../lib/dns-api';
 
 type Context = { params: Promise<{ domainId: string }> };
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, context: Context) {
   if (typeof body.environment === 'string' && ['production','staging','internal','client_projects'].includes(body.environment)) data.environment = body.environment;
   try {
     const domain = await prisma.$transaction(async tx => {
-      const updated = await tx.domain.update({ where: { id: domainId }, data });
+      const updated = await tx.domain.update({ where: { id: domainId }, data: data as Prisma.DomainUpdateInput });
       await tx.auditLog.create({ data: { userId, domainId, action: 'DOMAIN_UPDATED', details: `Updated domain ${updated.name}`, ipAddress: getRequestIp(request), before: auditPayload(existing), after: auditPayload(updated) } });
       return updated;
     });
