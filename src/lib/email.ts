@@ -1,1 +1,15 @@
-import nodemailer from 'nodemailer';export async function sendAuthEmail(to:string,subject:string,url:string){const{EMAIL_SERVER_HOST,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD,EMAIL_FROM}=process.env;if(!EMAIL_SERVER_HOST||!EMAIL_SERVER_USER||!EMAIL_SERVER_PASSWORD||!EMAIL_FROM)throw new Error('Email chưa được cấu hình.');const port=Number(process.env.EMAIL_SERVER_PORT||587);const tx=nodemailer.createTransport({host:EMAIL_SERVER_HOST,port,secure:port===465,auth:{user:EMAIL_SERVER_USER,pass:EMAIL_SERVER_PASSWORD}});await tx.sendMail({from:EMAIL_FROM,to,subject,text:subject+'\n\n'+url+'\n\nNếu bạn không yêu cầu thao tác này, hãy bỏ qua email.',html:'<p>'+subject+'</p><p><a href="'+url+'">Tiếp tục</a></p>'});}
+export async function sendAuthEmail(to: string, subject: string, url: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) throw new Error('Email chưa được cấu hình.');
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from, to, subject,
+      html: `<main style="font-family:Arial,sans-serif"><h2>Cloudxx</h2><p>${subject}</p><p><a href="${url}">Tiếp tục</a></p><p>Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p></main>`,
+      text: `${subject}\n\n${url}\n\nNếu bạn không yêu cầu thao tác này, hãy bỏ qua email.`,
+    }),
+  });
+  if (!response.ok) throw new Error('Nhà cung cấp email từ chối yêu cầu gửi thư.');
+}
