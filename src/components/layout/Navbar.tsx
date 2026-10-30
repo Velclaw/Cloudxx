@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAddModal }) => {
             className="flex items-center gap-1.5 cursor-pointer"
           >
             <span className="text-sm font-bold tracking-tight text-white hover:text-neutral-300 transition-colors whitespace-nowrap">
-              DNS Sentinel
+              Cloudxx
             </span>
             <span className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
               v1.4
