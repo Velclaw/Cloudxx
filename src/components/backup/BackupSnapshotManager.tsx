@@ -47,7 +47,7 @@ export const BackupSnapshotManager: React.FC = () => {
         if (ok) {
           alert('Khôi phục dữ liệu thành công từ file JSON tải lên!');
         } else {
-          alert('Tệp tin không đúng định dạng sao lưu của DNS Sentinel.');
+          alert('Tệp tin không đúng định dạng sao lưu của Cloudxx.');
         }
       }
     };
