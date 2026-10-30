@@ -7,7 +7,7 @@ const AuthContext=createContext<AuthContextValue|undefined>(undefined);
 export const AuthProvider:React.FC<{children:React.ReactNode}>=({children})=>{
  const {data,status}=useSession(); const raw=data?.user as ({id?:string;email?:string|null;name?:string|null;image?:string|null;createdAt?:string;emailVerifiedAt?:string})|undefined;
  const user:User|null=raw?.id?{id:raw.id,email:raw.email??'',created_at:raw.createdAt??new Date().toISOString(),email_confirmed_at:raw.emailVerifiedAt??null,user_metadata:{full_name:raw.name??''},name:raw.name,image:raw.image}:null;
- const signOut=async()=>{await authSignOut({callbackUrl:'/'});};
+ const signOut=async()=>{await authSignOut({redirectTo:'/'});};
  return <AuthContext.Provider value={{user,session:data,loading:status==='loading',configured:true,passwordRecovery:false,signOut}}>{children}</AuthContext.Provider>;
 };
 export const useAuth=()=>{const value=useContext(AuthContext);if(!value)throw new Error('useAuth must be used within AuthProvider');return value;};
