@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // GitHub Pages hosts this repository below /DOMAINS/; Vercel serves at /.
+    // BASE_PATH is set only by the Pages workflow so both hosts get correct asset URLs.
+    base: process.env.BASE_PATH || '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
