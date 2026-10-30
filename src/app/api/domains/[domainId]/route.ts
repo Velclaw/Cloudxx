@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import type { Prisma } from '../../../../../generated/prisma/client';
+import type { Prisma } from '../../../../generated/prisma/client';
 import { auditPayload, getRequestIp, requireDnsUser, validDomainName } from '../../../../lib/dns-api';
 
 type Context = { params: Promise<{ domainId: string }> };
