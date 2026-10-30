@@ -11,8 +11,11 @@ function escapeHtml(value: string): string {
   });
 }
 
-export function getAuthBaseUrl(request: Request): URL {
-  const configuredUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
+export function getAuthBaseUrl(): URL {
+  const configuredUrl =
+    process.env.AUTH_URL ||
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
   if (configuredUrl) {
     const url = new URL(configuredUrl);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') {
@@ -24,17 +27,7 @@ export function getAuthBaseUrl(request: Request): URL {
     return url;
   }
 
-  if (process.env.VERCEL_URL) {
-    return new URL(`https://${process.env.VERCEL_URL}`);
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Configure AUTH_URL before sending authentication emails.');
-  }
-
-  return new URL(request.url).origin === 'null'
-    ? new URL('http://localhost:3000')
-    : new URL(request.url);
+  throw new Error('Configure AUTH_URL before sending authentication emails.');
 }
 
 export async function sendAuthEmail(to: string, subject: string, url: string) {
