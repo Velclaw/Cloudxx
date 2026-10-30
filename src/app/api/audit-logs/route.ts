@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { requireDnsUser } from '../../../../lib/dns-api';
+import { requireDnsUser } from '../../../lib/dns-api';
 
 export async function GET(request: Request) {
   const { userId, response } = await requireDnsUser();
