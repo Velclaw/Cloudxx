@@ -1,4 +1,4 @@
-# DOMAINS — DNS Sentinel
+# Cloudxx — Quản lý DNS & Tên miền
 
 React + TypeScript + Vite dashboard prototype for DNS zones, records, registrar connections, alerts, audit history, team roles, backups, and API access.
 
@@ -32,7 +32,7 @@ The publishable key is intended for browser applications. **Never** put a Supaba
 
 ## Authentication setup
 
-1. In Supabase Authentication > URL Configuration, add the deployed site URL to **Site URL** and **Redirect URLs**. For GitHub Pages use `https://zskbot.github.io/DOMAINS/`; for Vercel add the Preview and Production URLs you intend to use.
+1. In Supabase Authentication > URL Configuration, add the deployed site URL to **Site URL** and **Redirect URLs**. For GitHub Pages use `https://zskbot.github.io/Cloudxx/`; for Vercel add the Preview and Production URLs you intend to use.
 2. Enable email/password sign-up and configure SMTP/email delivery and email confirmation as required.
 3. Apply `supabase/migrations/202610300001_profiles.sql` to the selected Supabase project. It creates `public.profiles`, a signup trigger, and owner-only RLS policies.
 4. Add the two `VITE_SUPABASE_*` variables to the hosting build environment and rebuild the site.
