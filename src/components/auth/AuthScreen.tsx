@@ -11,7 +11,6 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  useEffect(() => { if (new URLSearchParams(window.location.search).get('mode') === 'updatePassword') setMode('updatePassword'); const verified = new URLSearchParams(window.location.search).get('verified'); if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.'); if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.'); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,6 +18,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'updatePassword') setMode('updatePassword');
+    const verified = params.get('verified');
+    if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.');
+    if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.');
+    if (verified === 'rate-limited') setErrorMessage('Bạn đã gửi quá nhiều yêu cầu xác minh. Vui lòng chờ 15 phút rồi thử lại.');
+  }, []);
 
   const changeMode = (nextMode: AuthMode) => {
     setMode(nextMode);
