@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       data: { identifier: email, token, expires: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
 
-    const verificationUrl = getAuthBaseUrl(request);
+    const verificationUrl = getAuthBaseUrl();
     verificationUrl.pathname = '/api/auth/verify-email';
     verificationUrl.search = '';
     verificationUrl.searchParams.set('token', raw);
