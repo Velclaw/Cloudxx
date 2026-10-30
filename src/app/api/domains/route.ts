@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { auditPayload, getRequestIp, requireDnsUser, validDomainName } from '../../../lib/dns-api';
 
 export async function GET() {
-  const { userId } = await requireDnsUser();
+  const userId = await requireDnsUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const domains = await prisma.domain.findMany({
     where: { userId },
@@ -14,8 +14,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const userId = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
   if (!validDomainName(body.name)) return NextResponse.json({ error: 'Tên domain không hợp lệ.' }, { status: 400 });
