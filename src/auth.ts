@@ -6,7 +6,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './lib/prisma';
 import bcrypt from 'bcryptjs';
 export const { handlers, auth, signIn, signOut } = NextAuth({
- adapter: PrismaAdapter(prisma), session:{strategy:'jwt',maxAge:30*24*60*60},
+ adapter: PrismaAdapter(prisma), trustHost: true, session:{strategy:'jwt',maxAge:30*24*60*60},
  providers:[GitHub,Google,Credentials({credentials:{email:{type:'email'},password:{type:'password'}},async authorize(credentials){
   const email=String(credentials?.email??'').trim().toLowerCase(),password=String(credentials?.password??'');
   if(!email||!password)return null;const user=await prisma.user.findUnique({where:{email}});

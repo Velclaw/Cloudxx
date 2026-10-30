@@ -18,13 +18,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'updatePassword') setMode('updatePassword');
-    const verified = params.get('verified');
-    if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.');
-    if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.');
-  }, []);
 
   const changeMode = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -39,7 +32,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setMessage('');
     setErrorMessage('');
     try {
-      await signIn(provider, { redirectTo: window.location.pathname });
+      await signIn(provider, { callbackUrl: window.location.pathname });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể đăng nhập bằng tài khoản bên thứ ba.');
       setBusy(false);
