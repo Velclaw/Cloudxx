@@ -41,7 +41,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     setMessage('');
     setErrorMessage('');
     try {
-      await signIn(provider, { redirectTo: window.location.pathname });
+      await signIn(provider, { redirectTo: '/dashboard' });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể đăng nhập bằng tài khoản bên thứ ba.');
       setBusy(false);
@@ -65,7 +65,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
         if (password !== confirmPassword) throw new Error('Hai mật khẩu không khớp.');
         const token = new URLSearchParams(window.location.search).get('token'); if (!token) throw new Error('Liên kết đặt lại mật khẩu không hợp lệ.'); const response = await fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể cập nhật mật khẩu.'); setMessage('Đã cập nhật mật khẩu. Hãy đăng nhập lại.');
       } else {
-        const result = await signIn('credentials', { email: email.trim().toLowerCase(), password, redirect: false }); if (result?.error) throw new Error('Email hoặc mật khẩu không đúng, hoặc email chưa được xác minh.'); window.location.assign('/');
+        const result = await signIn('credentials', { email: email.trim().toLowerCase(), password, redirect: false }); if (result?.error) throw new Error('Email hoặc mật khẩu không đúng, hoặc email chưa được xác minh.'); window.location.assign('/dashboard');
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu. Vui lòng thử lại.');
