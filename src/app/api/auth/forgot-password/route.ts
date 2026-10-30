@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import { createHash, randomBytes } from 'node:crypto';
 import { prisma } from '../../../../lib/prisma';
 import { getAuthBaseUrl, sendAuthEmail } from '../../../../lib/email';
+import { consumeAuthRateLimit } from '../../../../lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    if (!(await consumeAuthRateLimit(request, 'forgot-password', 5, 15 * 60 * 1000))) {
+      return NextResponse.json({ ok: true }, { status: 429, headers: { 'Retry-After': '900' } });
+    }
+
     const body = await request.json();
     const email = String(body.email ?? '').trim().toLowerCase();
 
