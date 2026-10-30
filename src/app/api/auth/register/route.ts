@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const password = String(body.password ?? '');
     const name = String(body.fullName ?? '').trim();
 
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
       return NextResponse.json({ error: 'Email hoặc mật khẩu không hợp lệ.' }, { status: 400 });
     }
 
