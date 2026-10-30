@@ -5,8 +5,8 @@ import { getRequestIp, requireDnsUser } from '../../../../lib/dns-api';
 type Context = { params: Promise<{ registrarId: string }> };
 
 export async function PATCH(request: Request, context: Context) {
-  const { userId, response } = await requireDnsUser();
-  if (response || !userId) return response;
+  const { userId } = await requireDnsUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { registrarId } = await context.params;
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
