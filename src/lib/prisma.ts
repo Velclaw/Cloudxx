@@ -1,1 +1,8 @@
-import {PrismaClient} from '@prisma/client';const g=globalThis as unknown as {prisma?:PrismaClient};export const prisma=g.prisma??new PrismaClient();if(process.env.NODE_ENV!=='production')g.prisma=prisma;
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../generated/prisma/client';
+
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL || 'postgresql://build:build@127.0.0.1:5432/cloudxx';
+const adapter = new PrismaPg({ connectionString });
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
