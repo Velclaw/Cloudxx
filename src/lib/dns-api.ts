@@ -4,11 +4,11 @@ import type { Prisma } from '../../generated/prisma/client';
 export { validDomainName, validRecordType } from './dns-validation';
 import { validDomainName, validRecordType } from './dns-validation';
 
-export async function requireDnsUser(): Promise<{ userId: string; response: null } | { userId: null; response: NextResponse }> {
+export async function requireDnsUser(): Promise<string | null> {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return { userId: null, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  return { userId, response: null };
+  if (!userId) return null;
+  return userId;
 }
 
 export function getRequestIp(request: Request) {
