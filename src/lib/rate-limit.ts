@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { prisma } from './prisma';
 
 export async function consumeAuthRateLimit(
-  request: Request,
+  request: { headers: Headers },
   scope: string,
   maxAttempts: number,
   windowMs: number,
