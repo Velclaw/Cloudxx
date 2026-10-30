@@ -11,8 +11,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   const email=String(credentials?.email??'').trim().toLowerCase(),password=String(credentials?.password??'');
   if(!email||!password)return null;const user=await prisma.user.findUnique({where:{email}});
   if(!user?.passwordHash||!user.emailVerified||!(await bcrypt.compare(password,user.passwordHash)))return null;
-  return {id:user.id,email:user.email,name:user.name,image:user.image,createdAt:user.createdAt.toISOString(),emailVerified:user.emailVerified.toISOString()};
+  return {id:user.id,email:user.email,name:user.name,image:user.image,createdAt:user.createdAt.toISOString(),emailVerifiedAt:user.emailVerified.toISOString()};
  }})],
- callbacks:{async jwt({token,user}){if(user){const u=user as {createdAt?:string;emailVerified?:string};token.createdAt=u.createdAt;token.emailVerified=u.emailVerified;}return token;},async session({session,token}){if(session.user&&token.sub){session.user.id=token.sub;session.user.createdAt=typeof token.createdAt==='string'?token.createdAt:undefined;session.user.emailVerified=typeof token.emailVerified==='string'?token.emailVerified:undefined;}return session;}},
+ callbacks:{async jwt({token,user}){if(user){const u=user as {createdAt?:string|Date;emailVerified?:Date|string|null};token.createdAt=typeof u.createdAt==='string'?u.createdAt:u.createdAt?.toISOString()??new Date().toISOString();token.emailVerifiedAt=u.emailVerified instanceof Date?u.emailVerified.toISOString():typeof u.emailVerified==='string'?u.emailVerified:undefined;}return token;},async session({session,token}){if(session.user&&token.sub){session.user.id=token.sub;session.user.createdAt=typeof token.createdAt==='string'?token.createdAt:undefined;session.user.emailVerifiedAt=typeof token.emailVerifiedAt==='string'?token.emailVerifiedAt:undefined;}return session;}},
  pages:{signIn:'/'},
 });
