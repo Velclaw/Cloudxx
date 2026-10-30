@@ -22,7 +22,11 @@ jobs:
           node-version: "22.12"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Unit tests
+        run: npm test
       - name: TypeScript check
         run: npm run typecheck
+      - name: Lint and type validation
+        run: npm run lint
       - name: Production build
         run: npm run build

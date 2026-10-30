@@ -11,7 +11,6 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  useEffect(() => { if (new URLSearchParams(window.location.search).get('mode') === 'updatePassword') setMode('updatePassword'); const verified = new URLSearchParams(window.location.search).get('verified'); if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.'); if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.'); }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,6 +18,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'updatePassword') setMode('updatePassword');
+    const verified = params.get('verified');
+    if (verified === 'success') setMessage('Email đã được xác minh. Bạn có thể đăng nhập.');
+    if (verified === 'invalid') setErrorMessage('Liên kết xác minh không hợp lệ hoặc đã hết hạn.');
+    if (verified === 'rate-limited') setErrorMessage('Bạn đã gửi quá nhiều yêu cầu xác minh. Vui lòng chờ 15 phút rồi thử lại.');
+  }, []);
 
   const changeMode = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -49,7 +57,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
       if (mode === 'register') {
         const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase(), password, fullName: fullName.trim() }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể đăng ký.');
-        setMessage('Đã gửi email xác minh. Mở hộp thư và xác nhận trước khi đăng nhập.');
+        setMessage('Nếu địa chỉ email có thể đăng ký, hướng dẫn xác minh sẽ được gửi.');
       } else if (mode === 'reset') {
         const response = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim().toLowerCase() }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Không thể gửi email.');
         setMessage('Nếu địa chỉ email hợp lệ, hướng dẫn đặt lại mật khẩu đã được gửi.');

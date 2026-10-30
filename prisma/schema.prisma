@@ -1,10 +1,9 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 datasource db {
   provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 model User {
   id String @id @default(cuid())
@@ -16,6 +15,9 @@ model User {
   accounts Account[]
   sessions Session[]
   profile Profile?
+  domains Domain[]
+  registrars Registrar[]
+  auditLogs AuditLog[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -58,4 +60,84 @@ model Profile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthRateLimit {
+  key             String   @id
+  windowStartedAt DateTime
+  attempts        Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model Domain {
+  id              String      @id @default(cuid())
+  userId          String
+  name            String
+  registrar       String?
+  status          String      @default("active")
+  autoRenew       Boolean     @default(false)
+  expiresAt       DateTime?
+  nameservers     String[]    @default([])
+  dnssec          Boolean     @default(false)
+  environment     String      @default("production")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records         DNSRecord[]
+  auditLogs       AuditLog[]
+  @@unique([userId, name])
+  @@index([userId, updatedAt])
+}
+
+model DNSRecord {
+  id          String   @id @default(cuid())
+  domainId    String
+  type        String
+  name        String
+  content     String   @db.Text
+  ttl         Int      @default(300)
+  ttlAuto     Boolean  @default(false)
+  priority    Int?
+  port        Int?
+  weight      Int?
+  proxied     Boolean  @default(false)
+  comment     String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  domain      Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  @@index([domainId, name, type])
+}
+
+model Registrar {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String
+  displayName  String
+  accountEmail String?
+  encryptedCredentials String? @db.Text
+  status       String   @default("disconnected")
+  lastSyncedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, provider, displayName])
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  domainId  String?
+  action    String
+  details   String   @db.Text
+  before    Json?
+  after     Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  domain    Domain?  @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  @@index([userId, createdAt])
+  @@index([domainId, createdAt])
 }
