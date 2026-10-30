@@ -74,11 +74,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
     : mode === 'reset' ? 'Khôi phục mật khẩu'
       : mode === 'updatePassword' ? 'Đặt mật khẩu mới' : 'Đăng nhập';
   const subtitle = mode === 'register'
-    ? 'Tạo tài khoản DOMAINS để lưu hồ sơ và dữ liệu cá nhân.'
+    ? 'Tạo tài khoản Cloudxx để lưu hồ sơ và dữ liệu cá nhân.'
     : mode === 'reset'
       ? 'Nhập email để nhận liên kết đặt lại mật khẩu.'
       : mode === 'updatePassword'
-        ? 'Tạo mật khẩu mới cho tài khoản DOMAINS của bạn.'
+        ? 'Tạo mật khẩu mới cho tài khoản Cloudxx của bạn.'
         : 'Đăng nhập để tiếp tục quản lý tên miền và DNS.';
 
   return (
@@ -88,7 +88,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' })
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-neutral-700 bg-neutral-900">
             <ShieldCheck className="h-6 w-6 text-white" />
           </div>
-          <p className="text-xs font-mono uppercase tracking-[0.24em] text-neutral-500">DNS Sentinel · DOMAINS</p>
+          <p className="text-xs font-mono uppercase tracking-[0.24em] text-neutral-500">Cloudxx</p>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm text-neutral-400">{subtitle}</p>
         </div>

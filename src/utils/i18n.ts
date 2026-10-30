@@ -2,8 +2,8 @@ export type Language = 'vi' | 'en';
 
 export const translations = {
   vi: {
-    appName: 'DNS Sentinel',
-    appTagline: 'Quản Lý DNS & Tên Miền Doanh Nghiệp Thời Gian Thực',
+    appName: 'Cloudxx',
+    appTagline: 'Quản lý DNS & tên miền',
     
     // Nav items
     navDashboard: 'Tổng quan',
@@ -85,8 +85,8 @@ export const translations = {
     offlineNotice: 'Bạn đang ở chế độ ngoại tuyến. Các thay đổi được lưu cục bộ và sẽ tự động đồng bộ khi kết nối lại.',
   },
   en: {
-    appName: 'DNS Sentinel',
-    appTagline: 'Real-time Enterprise DNS & Domain Management',
+    appName: 'Cloudxx',
+    appTagline: 'DNS & domain management',
     
     // Nav items
     navDashboard: 'Dashboard',

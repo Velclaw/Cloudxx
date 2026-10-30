@@ -640,8 +640,8 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const sendTestNotification = (channel: 'telegram' | 'email') => {
     const title = channel === 'telegram'
-      ? '🔔 [Telegram Test] DNS Sentinel Security Alert'
-      : '📧 [Email Test] Thông báo kiểm tra hệ thống DNS Sentinel';
+      ? '🔔 [Telegram Test] Cloudxx Security Alert'
+      : '📧 [Email Test] Thông báo kiểm tra hệ thống Cloudxx';
     const msg = `Hệ thống xác nhận kênh thông báo ${channel.toUpperCase()} hoạt động hoàn hảo. IP: 113.161.44.18 | Lúc: ${new Date().toLocaleTimeString('vi-VN')}`;
 
     dispatchAlert(title, msg, 'info');

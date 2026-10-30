@@ -71,7 +71,7 @@ export const SecurityTwoFactor: React.FC = () => {
   };
 
   const handleDownloadBackupCodes = () => {
-    const text = `DNS Sentinel Enterprise - Mã Dự Phòng 2FA\nTài khoản: ${currentUser.email}\nNgày cấp: ${new Date().toLocaleDateString('vi-VN')}\n\n` +
+    const text = `Cloudxx Enterprise - Mã Dự Phòng 2FA\nTài khoản: ${currentUser.email}\nNgày cấp: ${new Date().toLocaleDateString('vi-VN')}\n\n` +
       twoFactorSettings.backupCodes.map((c, i) => `${i + 1}. ${c}`).join('\n') +
       '\n\nLưu ý: Mỗi mã chỉ có thể sử dụng một lần duy nhất khi bạn mất thiết bị xác thực.';
     downloadFile(text, `2FA_Backup_Codes_${currentUser.name}.txt`, 'text/plain');
@@ -367,7 +367,7 @@ export const SecurityTwoFactor: React.FC = () => {
                       <span className="text-slate-500">Vừa xong</span>
                     </div>
                     <div className="p-2.5 rounded bg-slate-950 font-mono text-xs text-slate-200">
-                      [DNS Sentinel Enterprise] Mã xác thực 2FA của bạn là: <strong className="text-cyan-300 text-sm tracking-widest">{smsSentCode}</strong>. Mã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ cho bất kỳ ai.
+                      [Cloudxx Enterprise] Mã xác thực 2FA của bạn là: <strong className="text-cyan-300 text-sm tracking-widest">{smsSentCode}</strong>. Mã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ cho bất kỳ ai.
                     </div>
                   </div>
                 )}

@@ -401,7 +401,7 @@ export const GlobalCommandPalette: React.FC = () => {
           </div>
 
           <div className="text-[10px] text-neutral-400 font-medium">
-            <span>DNS Sentinel Global Search</span>
+            <span>Cloudxx Global Search</span>
           </div>
         </div>
       </div>
