@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.0",
   "engines": {
-    "node": ">=22.12.0 <27"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
@@ -12,8 +12,7 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
-    "prebuild": "npm audit --json > /tmp/cloudxx-audit.json || true; node -e \"const a=require('/tmp/cloudxx-audit.json'); console.log('CLOUDXX_AUDIT_SUMMARY',JSON.stringify(Object.entries(a.vulnerabilities||{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable,via:v.via.map(x=>typeof x==='string'?x:x.name)}))))\""
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
