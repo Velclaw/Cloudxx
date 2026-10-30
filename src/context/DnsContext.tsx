@@ -693,7 +693,7 @@ export const DnsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dispatchAlert('Không thể xóa domain', 'PostgreSQL chưa xác nhận thao tác; domain vẫn được giữ lại.', 'error', domain.name);
       });
 
-    logAudit('DELETE_RECORD', domain.name, `Xóa toàn bộ vùng tên miền ${domain.name} và tất cả bản ghi liên quan`, undefined, undefined, undefined, false);
+    logAudit('DOMAIN_DELETED', domain.name, `Xóa toàn bộ vùng tên miền ${domain.name} và tất cả bản ghi liên quan`, undefined, undefined, undefined, false);
     dispatchAlert('Vùng tên miền đã bị gỡ bỏ', `${domain.name} đã ngừng quản lý DNS`, 'warning', domain.name);
   };
 
